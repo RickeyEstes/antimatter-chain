@@ -19,23 +19,23 @@ inline void LogTrace(const std::string& log){
     BOOST_LOG_TRIVIAL(debug) <<"["<<__FILE__<<":"<<__FUNCTION__<<":"<<__LINE__<<"]:"<<log;
 
 
-inline void LogInfo(const std::string& log){
-    InitLog();
+#define LogInfo(log)\
+    InitLog();\
     BOOST_LOG_TRIVIAL(info) << "["<<__FILE__<<":"<<__FUNCTION__<<":"<<__LINE__<<"]:"<<log;
-}
 
-inline void LogWarning(const std::string& log){
-    InitLog();
+
+#define LogWarning(log)\
+    InitLog();\
     BOOST_LOG_TRIVIAL(warning) << "["<<__FILE__<<":"<<__FUNCTION__<<":"<<__LINE__<<"]:"<<log;
-}
 
-inline void LogError(const std::string& log){
-    InitLog();
+
+#define LogError(log)\
+    InitLog();\
     BOOST_LOG_TRIVIAL(error) << "["<<__FILE__<<":"<<__FUNCTION__<<":"<<__LINE__<<"]:"<<log;
-}
 
-inline void LogFatal(const std::string& log){
-    InitLog();
+
+#define LogFatal(log)\
+    InitLog();\
     BOOST_LOG_TRIVIAL(fatal) << "["<<__FILE__<<":"<<__FUNCTION__<<":"<<__LINE__<<"]:"<<log;
-}
+
 #endif

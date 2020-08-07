@@ -10,5 +10,6 @@ void InitLog(){
         );
         boost::log::add_console_log(std::clog, boost::log::keywords::format = "%TimeStamp%: %Message%");
         boost::log::add_common_attributes();
+        lob_inited = true;
     }
 }

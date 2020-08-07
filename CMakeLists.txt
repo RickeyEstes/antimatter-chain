@@ -10,9 +10,12 @@ include_directories(
     ${Boost_INCLUDE_DIRS}
 )
 LINK_DIRECTORIES(/usr/local/lib)
-message("${Boost_LIBRARIES}")
+
 aux_source_directory(./ amt_str)
 aux_source_directory(./net amt_str)
 aux_source_directory(./log amt_str)
+aux_source_directory(./config amt_str)
+aux_source_directory(./tool amt_str)
+
 add_executable(amt ${amt_str})
 target_link_libraries(amt PRIVATE  ${Boost_LIBRARIES})
