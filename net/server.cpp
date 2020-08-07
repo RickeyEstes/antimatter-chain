@@ -16,8 +16,7 @@ Server::~Server(){
 }
 
 void Server::Start(){
-    std::shared_ptr<ClientItem> new_item = std::make_shared<ClientItem>(ioc);
-    std::cout<<new_item.get()<<std::endl;
+    std::shared_ptr<ClientItem> new_item = std::make_shared<ClientItem>(ioc, std::bind(&Server::OnError,this, std::placeholders::_1));
     acceptor.async_accept(
         new_item->GetSocket(),
         std::bind(&Server::OnAccept, this, new_item,
@@ -26,8 +25,28 @@ void Server::Start(){
 }
 
 void Server::OnAccept(std::shared_ptr<ClientItem> new_item, const boost::system::error_code& error){
-    client_list.push_back(new_item);
-    //std::cout<<new_item->GetLocalEndpoint()<<std::endl;
+    {
+        std::lock_guard<std::mutex> lk(client_list_mutex);
+        client_list.push_back(new_item);
+        LogInfo("Receive a new connection, count "<<client_list.size())
+    }
     new_item->Start();
-    LogDebug("yes123");
+    std::shared_ptr<ClientItem> item = std::make_shared<ClientItem>(ioc, std::bind(&Server::OnError,this, std::placeholders::_1));
+    acceptor.async_accept(
+        item->GetSocket(),
+        std::bind(&Server::OnAccept, this, item,
+        std::placeholders::_1));
+}
+
+void Server::OnError(std::shared_ptr<ClientItem> item){
+    {
+        std::lock_guard<std::mutex> lk(client_list_mutex);
+        for(auto iter = client_list.begin(); iter != client_list.end(); iter++){
+            if(item == *iter){
+                client_list.erase(iter);
+                LogInfo("Remove a connection, count "<<client_list.size())
+                break;
+            }
+        }
+    }
 }

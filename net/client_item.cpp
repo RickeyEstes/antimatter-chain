@@ -1,7 +1,8 @@
 #include "client_item.hpp"
 #include "log/log.hpp"
 #include "tool/string_tools.hpp"
-ClientItem::ClientItem(boost::asio::io_context& ioc):socket(ioc)
+ClientItem::ClientItem(boost::asio::io_context& ioc, std::function<void(std::shared_ptr<ClientItem>)> on_error_cb):
+socket(ioc),on_error(on_error_cb)
 {
 
 }
@@ -29,6 +30,9 @@ boost::asio::ip::tcp::socket& ClientItem::GetSocket(){
 void ClientItem::OnRead(const boost::system::error_code& error, std::size_t bytes_transferred){
     if(error){
         LogWarning("OnReadError:"+ error.message());
+        if(on_error){
+            on_error(shared_from_this());
+        }
         return;
     }else{
         LogDebug("Readed "<<bytes_transferred<<" bytes")
