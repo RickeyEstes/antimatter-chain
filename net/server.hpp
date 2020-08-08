@@ -6,9 +6,10 @@
 #include <mutex>
 #include <boost/asio.hpp>
 #include "client_item.hpp"
+#include "config/config.hpp"
 class Server{
 public:
-    Server();
+    Server(std::shared_ptr<Config> config_in);
     ~Server();
 public:
     void Start();
@@ -17,6 +18,7 @@ private:
       const boost::system::error_code& error);
     void OnError(std::shared_ptr<ClientItem> item);
 private:
+    std::shared_ptr<Config> config;
     boost::asio::io_context ioc;
     boost::asio::io_service::work work;
     boost::asio::ip::tcp::acceptor acceptor;

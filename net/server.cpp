@@ -2,12 +2,12 @@
 #define BOOST_BIND_GLOBAL_PLACEHOLDERS
 #include <boost/bind.hpp>
 #include "server.hpp"
-#include "config/config.hpp"
 #include "log/log.hpp"
-Server::Server():
+Server::Server(std::shared_ptr<Config> config_in):
+    config(config_in),
     ioc(std::thread::hardware_concurrency()),
     work(ioc),
-    acceptor(ioc, boost::asio::ip::tcp::endpoint(boost::asio::ip::tcp::v4(), Config::GetInstance()->net_config->lession_port), false){
+    acceptor(ioc, boost::asio::ip::tcp::endpoint(boost::asio::ip::tcp::v4(), config->net_config->lession_port), false){
 
 }
 
