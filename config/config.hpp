@@ -10,6 +10,7 @@ struct NetConfig{
 };
 class Config{
 public:
+    Config();
     ~Config();
     static std::shared_ptr<Config> GetInstance(int argc = 0, char** argv = nullptr);
 private:

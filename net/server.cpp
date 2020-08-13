@@ -3,16 +3,16 @@
 #include <boost/bind.hpp>
 #include "server.hpp"
 #include "log/log.hpp"
-Server::Server(std::shared_ptr<Config> config_in):
+Server::Server(boost::asio::io_context& ioc, std::shared_ptr<Config> config_in):
     config(config_in),
-    ioc(std::thread::hardware_concurrency()),
+    ioc(ioc),
     work(ioc),
     acceptor(ioc, boost::asio::ip::tcp::endpoint(boost::asio::ip::tcp::v4(), config->net_config->lession_port), false){
-
+    LogDebug("Server create"<<this);
 }
 
 Server::~Server(){
-
+    LogDebug("Server desdroy"<<this);
 }
 
 void Server::Start(){
@@ -21,7 +21,6 @@ void Server::Start(){
         new_item->GetSocket(),
         std::bind(&Server::OnAccept, this, new_item,
         std::placeholders::_1));
-    ioc_thread = std::shared_ptr<std::thread>(new std::thread(boost::bind(&boost::asio::io_context::run, &ioc)));
 }
 
 void Server::OnAccept(std::shared_ptr<ClientItem> new_item, const boost::system::error_code& error){

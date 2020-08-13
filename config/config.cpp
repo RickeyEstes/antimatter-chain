@@ -2,6 +2,11 @@
 #include <iostream>
 #include <boost/program_options.hpp>
 std::shared_ptr<Config> Config::instance = nullptr;
+
+Config::Config(){
+    net_config = std::make_shared<NetConfig>();
+}
+
 Config::~Config(){
     
 }
