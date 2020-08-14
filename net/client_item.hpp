@@ -20,9 +20,12 @@ public:
         std::function<void(std::shared_ptr<ClientItem>, const std::string& readed)> on_read_cb = std::function<void(std::shared_ptr<ClientItem>, const std::string& readed)>(), 
         std::function<void(std::shared_ptr<ClientItem>)> on_write_cb = std::function<void(std::shared_ptr<ClientItem>)>(), 
         std::function<void(std::shared_ptr<ClientItem>)> on_connect_cb = std::function<void(std::shared_ptr<ClientItem>)>());
+    ~ClientItem();
 public:
     void Start();
+    void Stop();
     void Write(const std::string& buf);
+    bool IsOpen();
 public:
     boost::asio::ip::tcp::endpoint GetLocalEndpoint();
     boost::asio::ip::tcp::endpoint GetRemoteEndpoint();

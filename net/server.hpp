@@ -13,6 +13,7 @@ public:
     ~Server();
 public:
     void Start();
+    std::list<std::shared_ptr<ClientItem>> GetClientList();
 private:
     void OnAccept(std::shared_ptr<ClientItem> new_item,
       const boost::system::error_code& error);

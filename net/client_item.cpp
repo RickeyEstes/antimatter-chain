@@ -11,6 +11,7 @@ ClientItem::ClientItem(
     ioc(ioc), socket(ioc),on_error(on_error_cb),on_read(on_read_cb),on_write(on_write_cb),on_connect(on_connect_cb){
 
 }
+
 ClientItem::ClientItem(
     boost::asio::io_context& ioc, 
     boost::asio::ip::tcp::endpoint ep, 
@@ -18,9 +19,13 @@ ClientItem::ClientItem(
     std::function<void(std::shared_ptr<ClientItem>, const std::string& readed)> on_read_cb, 
     std::function<void(std::shared_ptr<ClientItem>)> on_write_cb, 
     std::function<void(std::shared_ptr<ClientItem>)> on_connect_cb):ioc(ioc), socket(ioc),on_error(on_error_cb),on_read(on_read_cb),on_write(on_write_cb),on_connect(on_connect_cb){
-        socket.async_connect(ep, std::bind(&ClientItem::OnError, shared_from_this(), std::placeholders::_1));
-
+        socket.async_connect(ep, std::bind(&ClientItem::OnConnect, this, std::placeholders::_1));
 }
+
+ClientItem::~ClientItem(){
+    Stop();
+}
+
 void ClientItem::Start(){
     buffer_read_tmp.resize(1024*1024*10);
     buffer_write_tmp.resize(1024*1024*10);
@@ -29,12 +34,24 @@ void ClientItem::Start(){
     //boost::asio::buffer dd;
 }
 
+void ClientItem::Stop(){
+    LogDebug("client stop");
+    try{
+        socket.shutdown(boost::asio::ip::tcp::socket::shutdown_both);
+        socket.close();
+    }catch(...){}
+}
+
 void ClientItem::Write(const std::string& buf){
     std::lock_guard<std::mutex> lk(mutex_buffer_write);
     buffer_write.append(buf);
     if(buf.size() == buffer_write.size()){
         socket.async_write_some(boost::asio::buffer(buf), std::bind(&ClientItem::OnWrite, shared_from_this(), std::placeholders::_1, std::placeholders::_2));
     }
+}
+
+bool ClientItem::IsOpen(){
+    return socket.is_open();
 }
 
 boost::asio::ip::tcp::endpoint ClientItem::GetLocalEndpoint(){

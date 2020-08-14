@@ -12,6 +12,14 @@ Server::Server(boost::asio::io_context& ioc, std::shared_ptr<Config> config_in):
 }
 
 Server::~Server(){
+    boost::system::error_code ec;
+    acceptor.close(ec);
+    {
+        std::lock_guard<std::mutex> lk(client_list_mutex);
+        for(auto client : client_list){
+            client->Stop();
+        }
+    }
     LogDebug("Server desdroy"<<this);
 }
 
@@ -21,6 +29,11 @@ void Server::Start(){
         new_item->GetSocket(),
         std::bind(&Server::OnAccept, this, new_item,
         std::placeholders::_1));
+}
+
+std::list<std::shared_ptr<ClientItem>> Server::GetClientList(){
+    std::lock_guard<std::mutex> lk(client_list_mutex);
+    return client_list;
 }
 
 void Server::OnAccept(std::shared_ptr<ClientItem> new_item, const boost::system::error_code& error){
