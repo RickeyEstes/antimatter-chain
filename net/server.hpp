@@ -4,7 +4,9 @@
 #include <memory>
 #include <thread>
 #include <mutex>
+#include <functional>
 #include <boost/asio.hpp>
+#include <google/protobuf/message.h>
 #include "client_item.hpp"
 #include "config/config.hpp"
 class Server{
@@ -13,10 +15,13 @@ public:
     ~Server();
 public:
     void Start();
+    void Write(const std::string& buf);
     std::list<std::shared_ptr<ClientItem>> GetClientList();
 private:
     void OnAccept(std::shared_ptr<ClientItem> new_item,
       const boost::system::error_code& error);
+    void OnReadMsg(std::shared_ptr<ClientItem> new_item,
+      std::shared_ptr<::google::protobuf::Message> msg);
     void OnError(std::shared_ptr<ClientItem> item);
 private:
     std::shared_ptr<Config> config;
@@ -25,5 +30,6 @@ private:
     boost::asio::ip::tcp::acceptor acceptor;
     std::mutex client_list_mutex;
     std::list<std::shared_ptr<ClientItem>> client_list;
+    std::function<void(std::shared_ptr<ClientItem> new_item, std::shared_ptr<::google::protobuf::Message> msg)> on_read;
 };
 #endif

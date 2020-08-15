@@ -5,6 +5,7 @@
 #include <boost/bind.hpp>
 #include "net/server.hpp"
 #include "log/log.hpp"
+#include "base.pb.h"
 BOOST_AUTO_TEST_SUITE(NetTest)
 
 BOOST_AUTO_TEST_CASE(SampleTest){
@@ -120,6 +121,37 @@ BOOST_AUTO_TEST_CASE(ConnectAndDisconnectTest){
         thread_list[i]->join();
     }
     LogDebug("End connect test");
+}
+
+
+BOOST_AUTO_TEST_CASE(ReadWriteTest){
+    LogDebug("Start connectiong rw test");
+    boost::asio::io_context ioc;
+
+    //init server
+    std::shared_ptr<Config> server_config = std::make_shared<Config>();
+    server_config->net_config->lession_port=1111;
+    std::shared_ptr<Server> server = std::make_shared<Server>(ioc, server_config);
+    server->Start();
+    //init client
+    auto socket_item = std::make_shared<ClientItem>(ioc, boost::asio::ip::tcp::endpoint(boost::asio::ip::address::from_string("127.0.0.1"), server_config->net_config->lession_port));
+
+    //start io_context
+    std::vector<std::shared_ptr<std::thread>> thread_list;
+    for(auto i = 0; i < std::thread::hardware_concurrency(); i++){
+        thread_list.push_back(std::make_shared<std::thread>(boost::bind(&boost::asio::io_context::run, &ioc)));
+    }
+    //start test
+    std::this_thread::sleep_for(std::chrono::seconds(2));
+    //clear()
+    socket_item->Stop();
+    
+    //end io_context
+    ioc.stop();
+    for(auto i = 0; i < std::thread::hardware_concurrency(); i++){
+        thread_list[i]->join();
+    }
+    LogDebug("connectiong rw");
 }
 
 BOOST_AUTO_TEST_SUITE_END()

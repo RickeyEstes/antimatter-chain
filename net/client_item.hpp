@@ -5,19 +5,20 @@
 #include <mutex>
 #include <functional>
 #include <boost/asio.hpp>
+#include <google/protobuf/message.h>
 
 class ClientItem:public std::enable_shared_from_this<ClientItem>{
 public:
     ClientItem(
         boost::asio::io_context& ioc, 
         std::function<void(std::shared_ptr<ClientItem>, const boost::system::error_code&)> on_error_cb = std::function<void(std::shared_ptr<ClientItem>, const boost::system::error_code&)>(),
-        std::function<void(std::shared_ptr<ClientItem>, const std::string& readed)> on_read_cb = std::function<void(std::shared_ptr<ClientItem>, const std::string& readed)>(), 
+        std::function<void(std::shared_ptr<ClientItem>, std::shared_ptr<::google::protobuf::Message>)> on_read_cb = std::function<void(std::shared_ptr<ClientItem>, std::shared_ptr<::google::protobuf::Message>)>(), 
         std::function<void(std::shared_ptr<ClientItem>)> on_write_cb = std::function<void(std::shared_ptr<ClientItem>)>(), 
         std::function<void(std::shared_ptr<ClientItem>)> on_connect_cb = std::function<void(std::shared_ptr<ClientItem>)>());
     ClientItem(boost::asio::io_context& ioc, 
         boost::asio::ip::tcp::endpoint ep,
         std::function<void(std::shared_ptr<ClientItem>, const boost::system::error_code&)> on_error_cb = std::function<void(std::shared_ptr<ClientItem>, const boost::system::error_code&)>(), 
-        std::function<void(std::shared_ptr<ClientItem>, const std::string& readed)> on_read_cb = std::function<void(std::shared_ptr<ClientItem>, const std::string& readed)>(), 
+        std::function<void(std::shared_ptr<ClientItem>, std::shared_ptr<::google::protobuf::Message>)> on_read_cb = std::function<void(std::shared_ptr<ClientItem>, std::shared_ptr<::google::protobuf::Message>)>(), 
         std::function<void(std::shared_ptr<ClientItem>)> on_write_cb = std::function<void(std::shared_ptr<ClientItem>)>(), 
         std::function<void(std::shared_ptr<ClientItem>)> on_connect_cb = std::function<void(std::shared_ptr<ClientItem>)>());
     ~ClientItem();
@@ -38,14 +39,14 @@ private:
 private:
     boost::asio::io_context& ioc;
     boost::asio::ip::tcp::socket socket;
+    std::string buffer_read;
     std::string buffer_read_tmp;
     std::string buffer_write_tmp;
-    std::string buffer_read;
     std::string buffer_write;
     std::mutex mutex_buffer_write;
 private:
     std::function<void(std::shared_ptr<ClientItem>, const boost::system::error_code& error)> on_error;
-    std::function<void(std::shared_ptr<ClientItem>, const std::string& readed)> on_read;
+    std::function<void(std::shared_ptr<ClientItem>, std::shared_ptr<::google::protobuf::Message>)> on_read;
     std::function<void(std::shared_ptr<ClientItem>)> on_write;
     std::function<void(std::shared_ptr<ClientItem>)> on_connect;
 };
