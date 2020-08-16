@@ -11,11 +11,13 @@
 #include "config/config.hpp"
 class Server{
 public:
-    Server(boost::asio::io_context& ioc, std::shared_ptr<Config> config_in);
+    Server(boost::asio::io_context& ioc, 
+        std::shared_ptr<Config> config_in, 
+        std::function<void(std::shared_ptr<ClientItem>, std::shared_ptr<::google::protobuf::Message>)> on_read_cb = std::function<void(std::shared_ptr<ClientItem>, std::shared_ptr<::google::protobuf::Message>)>());
     ~Server();
 public:
     void Start();
-    void Write(const std::string& buf);
+    void Write(std::shared_ptr<::google::protobuf::Message> msg);
     std::list<std::shared_ptr<ClientItem>> GetClientList();
 private:
     void OnAccept(std::shared_ptr<ClientItem> new_item,

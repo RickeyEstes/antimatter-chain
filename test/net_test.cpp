@@ -5,11 +5,13 @@
 #include <boost/bind.hpp>
 #include "net/server.hpp"
 #include "log/log.hpp"
+#include "net/msg.hpp"
 #include "base.pb.h"
 BOOST_AUTO_TEST_SUITE(NetTest)
 
 BOOST_AUTO_TEST_CASE(SampleTest){
-    LogDebug("Start sample test");
+    LogInfo("========================>");
+    LogInfo("Start sample test");
     boost::asio::io_context ioc;
     std::shared_ptr<Config> server_config = std::make_shared<Config>();
     server_config->net_config->lession_port=1111;
@@ -22,12 +24,13 @@ BOOST_AUTO_TEST_CASE(SampleTest){
     for(auto i = 0; i < std::thread::hardware_concurrency(); i++){
         thread_list[i]->join();
     }
-    LogDebug("End sample test");
+    LogInfo("End sample test");
     BOOST_CHECK(1);
 }
 
 BOOST_AUTO_TEST_CASE(ConnectTest){
-    LogDebug("Start connect test");
+    LogInfo("=====================>");
+    LogInfo("Start connect test");
     boost::asio::io_context ioc;
 
     //init server
@@ -67,11 +70,12 @@ BOOST_AUTO_TEST_CASE(ConnectTest){
     for(auto i = 0; i < std::thread::hardware_concurrency(); i++){
         thread_list[i]->join();
     }
-    LogDebug("End connect test");
+    LogInfo("End connect test");
 }
 
 BOOST_AUTO_TEST_CASE(ConnectAndDisconnectTest){
-    LogDebug("Start connect test");
+    LogInfo("====================>");
+    LogInfo("Start connect test");
     boost::asio::io_context ioc;
 
     //init server
@@ -120,13 +124,16 @@ BOOST_AUTO_TEST_CASE(ConnectAndDisconnectTest){
     for(auto i = 0; i < std::thread::hardware_concurrency(); i++){
         thread_list[i]->join();
     }
-    LogDebug("End connect test");
+    LogInfo("End connect test");
 }
 
 
 BOOST_AUTO_TEST_CASE(ReadWriteTest){
-    LogDebug("Start connectiong rw test");
+    LogInfo("===========================>");
+    LogInfo("Start connectiong rw test");
     boost::asio::io_context ioc;
+    bool client_ping_readed = false;
+    bool client_pong_readed = false;
 
     //init server
     std::shared_ptr<Config> server_config = std::make_shared<Config>();
@@ -134,7 +141,21 @@ BOOST_AUTO_TEST_CASE(ReadWriteTest){
     std::shared_ptr<Server> server = std::make_shared<Server>(ioc, server_config);
     server->Start();
     //init client
-    auto socket_item = std::make_shared<ClientItem>(ioc, boost::asio::ip::tcp::endpoint(boost::asio::ip::address::from_string("127.0.0.1"), server_config->net_config->lession_port));
+    auto socket_item = std::make_shared<ClientItem>(
+        ioc, 
+        boost::asio::ip::tcp::endpoint(boost::asio::ip::address::from_string("127.0.0.1"), server_config->net_config->lession_port),
+        [](std::shared_ptr<ClientItem>, const boost::system::error_code&){},
+        [&client_ping_readed, &client_pong_readed](std::shared_ptr<ClientItem> client, std::shared_ptr<::google::protobuf::Message> msg){
+            LogInfo("Received a message: "<<msg->GetTypeName());
+            switch(Msg::GetMsgType(msg->GetTypeName())){
+            case MSG_PING:
+                client_ping_readed = true;
+                break;
+            case MSG_PONG:
+                client_pong_readed = true;
+                break;
+            }
+        });
 
     //start io_context
     std::vector<std::shared_ptr<std::thread>> thread_list;
@@ -142,8 +163,17 @@ BOOST_AUTO_TEST_CASE(ReadWriteTest){
         thread_list.push_back(std::make_shared<std::thread>(boost::bind(&boost::asio::io_context::run, &ioc)));
     }
     //start test
+    LogInfo("Start deal connection");
     std::this_thread::sleep_for(std::chrono::seconds(2));
-    //clear()
+    LogInfo("Start message send");
+    std::shared_ptr<net::Ping> ping = std::shared_ptr<net::Ping>(new net::Ping());
+    ping->set_version(0x00000001);
+    socket_item->Write(ping);
+    server->Write(ping);
+    std::this_thread::sleep_for(std::chrono::seconds(2));
+    LogInfo("End message send");
+    BOOST_CHECK(client_ping_readed);
+    BOOST_CHECK(client_pong_readed);
     socket_item->Stop();
     
     //end io_context
@@ -151,7 +181,7 @@ BOOST_AUTO_TEST_CASE(ReadWriteTest){
     for(auto i = 0; i < std::thread::hardware_concurrency(); i++){
         thread_list[i]->join();
     }
-    LogDebug("connectiong rw");
+    LogInfo("End connectiong rw");
 }
 
 BOOST_AUTO_TEST_SUITE_END()

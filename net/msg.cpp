@@ -1,11 +1,26 @@
 #include "msg.hpp"
 #include "base.pb.h"
-#include <unordered_map>
+
+std::unordered_map<std::string, int> Msg::msgtype_string2int_map;
+std::unordered_map<int, std::string> Msg::msgtype_int2string_map;
+
+inline void Msg::InitMsgType(){
+    if(msgtype_string2int_map.size())return;
+    msgtype_string2int_map = {
+        {"net.Ping", MSG_PING},
+        {"net.Pong", MSG_PONG}
+    };
+    for(auto item : msgtype_string2int_map){
+        msgtype_int2string_map[item.second] = item.first;
+    }
+}
+
 std::string Msg::EncodeProtobuf2String(std::shared_ptr<::google::protobuf::Message> msg){
     std::string rtn;
     uint32_t len;
     uint32_t type;
     std::string content;
+    InitMsgType();
     msg->SerializeToString(&content);
     len = content.size()+sizeof(type);
     type = GetMsgType(msg->GetTypeName());
@@ -15,12 +30,15 @@ std::string Msg::EncodeProtobuf2String(std::shared_ptr<::google::protobuf::Messa
 
     rtn.resize(len+4);
     void* ptr = memcpy((void*)rtn.c_str(), &len, sizeof(len));
+    ptr = (uint8_t*)ptr + sizeof(len);
     memcpy(ptr, &type, sizeof(type));
+    ptr = (uint8_t*)ptr + sizeof(type);
     memcpy(ptr, content.c_str(),content.size());
     return rtn;
 }
 
 std::shared_ptr<::google::protobuf::Message> Msg::DecodeString2Protobuf(std::string& msg){
+    InitMsgType();
     if(msg.size() < 8){
         return std::shared_ptr<::google::protobuf::Message>();
     }
@@ -39,6 +57,7 @@ std::shared_ptr<::google::protobuf::Message> Msg::DecodeString2Protobuf(std::str
             msg.erase(0, sizeof(len)+len);
             return std::shared_ptr<::google::protobuf::Message>();
         }
+        msg.erase(0, sizeof(len)+len);
         break;
     case MSG_PONG:
         rtn = std::shared_ptr<net::Pong>(new net::Pong());
@@ -46,6 +65,7 @@ std::shared_ptr<::google::protobuf::Message> Msg::DecodeString2Protobuf(std::str
             msg.erase(0, sizeof(len)+len);
             return std::shared_ptr<::google::protobuf::Message>();
         }
+        msg.erase(0, sizeof(len)+len);
         break;
     default:
         break;
@@ -54,18 +74,7 @@ std::shared_ptr<::google::protobuf::Message> Msg::DecodeString2Protobuf(std::str
     
     
 }
-static std::unordered_map<std::string, int> msgtype_string2int_map;
-static std::unordered_map<int, std::string> msgtype_int2string_map;
-inline void InitMsgType(){
-    if(msgtype_string2int_map.size())return;
-    msgtype_string2int_map = {
-        {"Ping", MSG_PING},
-        {"Pong", MSG_PONG}
-    };
-    for(auto item : msgtype_string2int_map){
-        msgtype_int2string_map[item.second] = item.first;
-    }
-}
+
 uint32_t Msg::GetMsgType(const std::string& msg_type){
     InitMsgType();
     if(msgtype_string2int_map.find(msg_type) != msgtype_string2int_map.end()){

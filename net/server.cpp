@@ -3,11 +3,14 @@
 #include <boost/bind.hpp>
 #include "server.hpp"
 #include "log/log.hpp"
-Server::Server(boost::asio::io_context& ioc, std::shared_ptr<Config> config_in):
+#include "msg.hpp"
+#include "base.pb.h"
+Server::Server(boost::asio::io_context& ioc, std::shared_ptr<Config> config_in,std::function<void(std::shared_ptr<ClientItem>, std::shared_ptr<::google::protobuf::Message>)> on_read_cb):
     config(config_in),
     ioc(ioc),
     work(ioc),
-    acceptor(ioc, boost::asio::ip::tcp::endpoint(boost::asio::ip::tcp::v4(), config->net_config->lession_port), false){
+    acceptor(ioc, boost::asio::ip::tcp::endpoint(boost::asio::ip::tcp::v4(), config->net_config->lession_port), false),
+    on_read(on_read_cb){
     LogDebug("Server create"<<this);
 }
 
@@ -31,10 +34,10 @@ void Server::Start(){
         std::placeholders::_1));
 }
 
-void Server::Write(const std::string& buf){
+void Server::Write(std::shared_ptr<::google::protobuf::Message> msg){
     std::lock_guard<std::mutex> lk(client_list_mutex);
     for(auto client_item : client_list){
-        client_item->Write(buf);
+        client_item->Write(msg);
     }
 }
 
@@ -60,6 +63,11 @@ void Server::OnAccept(std::shared_ptr<ClientItem> new_item, const boost::system:
 void Server::OnReadMsg(std::shared_ptr<ClientItem> new_item,
       std::shared_ptr<::google::protobuf::Message> msg){
     if(on_read)on_read(new_item, msg);
+    if(msg->GetTypeName() == "net.Ping"){
+        std::shared_ptr<net::Pong> pong = std::shared_ptr<net::Pong>(new net::Pong());
+        pong->set_version(0x00000001);
+        new_item->Write(pong);
+    }
     
 }
 void Server::OnError(std::shared_ptr<ClientItem> item){

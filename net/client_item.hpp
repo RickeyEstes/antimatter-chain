@@ -25,7 +25,7 @@ public:
 public:
     void Start();
     void Stop();
-    void Write(const std::string& buf);
+    void Write(std::shared_ptr<::google::protobuf::Message> msg);
     bool IsOpen();
 public:
     boost::asio::ip::tcp::endpoint GetLocalEndpoint();

@@ -42,8 +42,9 @@ void ClientItem::Stop(){
     }catch(...){}
 }
 
-void ClientItem::Write(const std::string& buf){
+void ClientItem::Write(std::shared_ptr<::google::protobuf::Message> msg){
     std::lock_guard<std::mutex> lk(mutex_buffer_write);
+    std::string buf = Msg::EncodeProtobuf2String(msg);
     buffer_write.append(buf);
     if(buf.size() == buffer_write.size()){
         socket.async_write_some(boost::asio::buffer(buf), std::bind(&ClientItem::OnWrite, shared_from_this(), std::placeholders::_1, std::placeholders::_2));
@@ -84,7 +85,7 @@ void ClientItem::OnRead(const boost::system::error_code& error, std::size_t byte
         }
         //if(on_read) on_read(shared_from_this(), std::string(buffer_read_tmp, 0, bytes_transferred));
         socket.async_read_some(boost::asio::buffer(buffer_read_tmp), std::bind(&ClientItem::OnRead, shared_from_this(),  std::placeholders::_1, std::placeholders::_2));
-        LogDebug("Readed "<<String2Hex(buffer_read_tmp)<<" bytes");
+        LogDebug("Readed "<<bytes_transferred<<" bytes");
     }
 }
 
